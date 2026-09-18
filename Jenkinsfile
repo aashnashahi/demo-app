@@ -1,4 +1,4 @@
-pipeline {
+﻿pipeline {
     agent any
 
     tools {
@@ -8,6 +8,7 @@ pipeline {
 
     environment {
         APP_NAME = 'demo-app'
+        IMAGE_NAME = 'demo-app'
     }
 
     stages {
@@ -38,6 +39,13 @@ pipeline {
             steps {
                 bat 'mvn -B package -DskipTests'
                 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                bat 'docker build -t %IMAGE_NAME%:%BUILD_NUMBER% -t %IMAGE_NAME%:latest .'
+                bat 'docker images %IMAGE_NAME%'
             }
         }
     }
