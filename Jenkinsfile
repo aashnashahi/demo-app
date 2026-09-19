@@ -9,6 +9,8 @@ pipeline {
     environment {
         APP_NAME = 'demo-app'
         IMAGE_NAME = 'demo-app'
+        REGISTRY = 'localhost:5000'
+        NEXUS_CREDS = credentials('nexus-creds')
     }
 
     stages {
@@ -64,11 +66,26 @@ pipeline {
                 bat 'docker images %IMAGE_NAME%'
             }
         }
+
+        stage('Push to Nexus') {
+            steps {
+                bat 'echo %NEXUS_CREDS_PSW%| docker login %REGISTRY% -u %NEXUS_CREDS_USR% --password-stdin'
+                bat 'docker tag %IMAGE_NAME%:latest %REGISTRY%/%IMAGE_NAME%:%BUILD_NUMBER%'
+                bat 'docker push %REGISTRY%/%IMAGE_NAME%:%BUILD_NUMBER%'
+                bat 'docker logout %REGISTRY%'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                bat 'docker rm -f demo-app 2>nul & docker run -d --name demo-app -p 8081:8080 %REGISTRY%/%IMAGE_NAME%:%BUILD_NUMBER%'
+            }
+        }
     }
 
     post {
         success {
-            echo 'Build, test and package completed.'
+            echo 'Build, test, package, Docker build, Nexus push and deployment completed.'
         }
         failure {
             echo 'Pipeline failed - check the stage logs.'
