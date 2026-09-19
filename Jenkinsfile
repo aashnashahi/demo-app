@@ -36,7 +36,11 @@ pipeline {
                 }
             }
         }
-
+        stage('Sonar Connectivity Test') {
+            steps {
+                bat 'curl.exe -i --max-time 15 http://localhost:9000/api/system/status'
+            }
+        }
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
